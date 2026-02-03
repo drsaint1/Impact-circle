@@ -1,125 +1,336 @@
-# Opik Integration Documentation
+# Opik Integration - Impact Circle
 
-Comprehensive LLM observability and tracing for Impact Circle's AI agents using [Comet Opik](https://www.comet.com/opik).
+Complete guide to Opik AI observability and advanced features implementation.
 
-## Table of Contents
+## 📋 Table of Contents
 
-- [Overview](#overview)
-- [Architecture](#architecture)
-- [File Structure](#file-structure)
-- [Configuration](#configuration)
-- [Usage](#usage)
-- [Examples](#examples)
-- [Troubleshooting](#troubleshooting)
+1. [Overview](#overview)
+2. [Advanced Features (4/4 Complete)](#advanced-features)
+3. [Basic Integration](#basic-integration)
+4. [File Structure](#file-structure)
+5. [Configuration](#configuration)
+6. [Usage Examples](#usage-examples)
+7. [Troubleshooting](#troubleshooting)
+8. [Resources](#resources)
+
+---
 
 ## Overview
 
-**What is Opik?**
+**Opik** is an open-source LLM evaluation and observability platform by Comet that provides comprehensive monitoring, tracing, and evaluation for AI applications.
 
-Opik is an open-source LLM evaluation and observability platform by Comet. It provides:
-- Real-time tracing of AI agent calls
-- Token usage and cost tracking
-- Performance metrics and latency measurements
-- Error tracking and debugging
-- Experiment tracking and A/B testing capabilities
+### Why Opik in Impact Circle?
 
-**Why use Opik in Impact Circle?**
+Impact Circle uses **6 AI agents** powered by Google Gemini. Opik provides:
 
-Impact Circle uses 6 AI agents powered by Google Gemini to match volunteers with opportunities. Opik helps us:
-1. Monitor agent performance in production
-2. Debug issues by tracing exact inputs/outputs
-3. Track costs across different Gemini models
-4. Evaluate response quality using LLM-as-judge
-5. Optimize prompts based on real usage data
+1. **Real-time tracing** of all agent calls
+2. **Prompt Library** for version-controlled prompts
+3. **Datasets** for regression testing
+4. **Experiments** for A/B testing
+5. **Annotation Queues** for human-in-the-loop review
+6. **Performance metrics** and cost tracking
+7. **LLM-as-judge evaluations** for quality assurance
 
-## Architecture
+### Implementation Status
+
+✅ **100% Complete** - All 4 Opik advanced features implemented:
+
+- ✅ Prompt Library (6 agent prompts live)
+- ✅ Datasets (skill-matcher-sample with 3 test cases)
+- ✅ Experiments (4 experiments configured)
+- ✅ Annotation Queues (5 queues configured)
+
+---
+
+## Advanced Features
+
+### 1. 📚 Prompt Library
+
+**Status**: ✅ Fully operational in production
+
+**File**: `prompts.ts`
+
+All 6 agent system prompts are version-controlled in Opik, enabling instant updates without code deployment.
+
+**Prompts in Opik**:
+- `community-intelligence-v1` - Issue discovery
+- `skill-matcher-v1` - User-to-opportunity matching
+- `action-coordinator-v1` - Circle planning
+- `impact-measurement-v1` - Impact validation
+- `engagement-coach-v1` - Burnout prevention
+- `master-coordinator-v1` - Multi-agent orchestration
+
+**Usage**:
+```typescript
+import { getPrompt, PROMPT_KEYS } from "@/lib/opik/prompts";
+
+// Fetch prompt from Opik (with fallback to local)
+const prompt = await getPrompt(PROMPT_KEYS.SKILL_MATCHER);
+
+// With variable substitution
+const prompt = await getPrompt(PROMPT_KEYS.SKILL_MATCHER, {
+  userName: "Alex",
+  location: "San Francisco"
+});
+```
+
+**Creating/Updating Prompts**:
+```typescript
+import { createPrompt } from "@/lib/opik/prompts";
+
+await createPrompt(
+  "my-agent-v1",
+  "You are a helpful assistant...",
+  {
+    description: "My agent prompt",
+    tags: ["agent", "v1"],
+    version: "1.0"
+  }
+);
+```
+
+**Benefits**:
+- ✅ Update prompts instantly without redeploying
+- ✅ A/B test different prompt variations
+- ✅ Track which prompts perform best
+- ✅ Version control for all AI instructions
+
+---
+
+### 2. 📊 Datasets
+
+**Status**: ✅ Fully operational in production
+
+**File**: `datasets.ts`
+
+Production-grade test datasets for regression testing and evaluation.
+
+**Dataset Created**: `skill-matcher-sample`
+- 3 test cases:
+  - Exact skill match (medium difficulty)
+  - Partial skill match (easy difficulty)
+  - High confidence match (easy difficulty)
+
+**Usage**:
+```typescript
+import { createDataset, addDatasetItems, getDataset } from "@/lib/opik/datasets";
+
+// Create a new dataset
+await createDataset({
+  name: "impact-validation-tests",
+  description: "Test cases for impact measurement agent"
+});
+
+// Add test cases
+await addDatasetItems("impact-validation-tests", [
+  {
+    input: {
+      activity: "Food drive",
+      claimed: { peopleHelped: 50 }
+    },
+    expectedOutput: {
+      validated: true,
+      confidence: 0.85
+    },
+    metadata: {
+      difficulty: "medium",
+      category: "realistic_claim"
+    }
+  }
+]);
+
+// Retrieve dataset
+const dataset = await getDataset("impact-validation-tests");
+```
+
+**Benefits**:
+- ✅ Regression testing ensures quality
+- ✅ Golden datasets from human-reviewed examples
+- ✅ Automated quality assurance
+- ✅ Benchmark agent performance
+
+---
+
+### 3. 🧪 Experiments
+
+**Status**: ✅ Code ready for A/B testing
+
+**File**: `experiments.ts`
+
+Hash-based consistent user assignment for statistically valid experiments.
+
+**Experiments Configured**:
+1. **MATCHING_MODEL** - Gemini 2.0 Flash vs 2.5 Pro
+2. **MATCHING_ALGORITHM** - Skills-only vs Hybrid
+3. **ENGAGEMENT_STRATEGY** - Reactive vs Proactive
+4. **IMPACT_VALIDATION** - Moderate vs Strict
+
+**Usage**:
+```typescript
+import { assignExperimentVariant, trackExperimentFeedback } from "@/lib/opik/experiments";
+
+// Assign user to experiment (consistent per user)
+const variant = assignExperimentVariant("matching_model", userId);
+// Always returns same variant for same user
+
+// Use appropriate model
+const model = variant === "control"
+  ? "gemini-2.0-flash-exp"
+  : "gemini-1.5-pro";
+
+// Track feedback
+await trackExperimentFeedback("matching_model", variant, userId, {
+  accepted: true,
+  rating: 5
+});
+```
+
+**How It Works**:
+- Deterministic hashing for consistent assignment
+- Same user always gets same variant
+- Feedback tracked to Opik with experiment tags
+- Statistical analysis in Opik dashboard
+
+**Benefits**:
+- ✅ Data-driven optimization
+- ✅ Compare model performance
+- ✅ Test strategies scientifically
+- ✅ Track statistical significance
+
+---
+
+### 4. 📝 Annotation Queues
+
+**Status**: ✅ Code ready for human review
+
+**File**: `annotations.ts`
+
+Automatic queuing of low-confidence predictions for human review.
+
+**Queues Configured**:
+1. **skill_matching_review** - Low-confidence matches
+2. **impact_validation_review** - Impact verification
+3. **safety_review** - Safety flag triggers
+4. **low_confidence_review** - Generic low-confidence
+5. **user_feedback_review** - User-reported issues
+
+**Usage**:
+```typescript
+import { queueForReview, autoQueueForReview, ANNOTATION_QUEUES } from "@/lib/opik/annotations";
+
+// Manual queue
+await queueForReview(ANNOTATION_QUEUES.SKILL_MATCHING, {
+  agentName: "skill_matcher",
+  input: userProfile,
+  output: recommendations,
+  priority: "high"
+});
+
+// Auto-queue based on confidence
+await autoQueueForReview(
+  "skill_matcher",
+  input,
+  output,
+  0.65  // If confidence < 0.7, auto-queues
+);
+```
+
+**Auto-Queue Rules**:
+- Confidence < 0.7 → LOW_CONFIDENCE queue (HIGH priority)
+- Safety flags → SAFETY_REVIEW queue (HIGH priority)
+- Rejected validations → IMPACT_VALIDATION queue
+
+**Benefits**:
+- ✅ Quality control for edge cases
+- ✅ Build training datasets
+- ✅ Identify agent weaknesses
+- ✅ Human oversight for critical decisions
+
+---
+
+## Basic Integration
 
 ### Tracing Strategy
 
-The Opik integration uses a **two-level tracing approach**:
+**Two-level tracing approach**:
 
 1. **Agent-Level Tracing** (Primary)
    - Wraps entire agent calls using `traceAgentCall()`
-   - Captures full agent lifecycle (input → processing → output)
-   - Used by all 6 AI agents in the project
-   - Handles both success and error cases
+   - Captures full lifecycle (input → processing → output)
+   - Used by all 6 AI agents
 
 2. **Model-Level Tracing** (Supplementary)
    - Traces streaming LLM calls via `TrackedGenerativeModel`
-   - Captures token usage, costs, and latency
-   - Only for streaming and token counting operations
-   - Non-streaming calls skip model-level tracing to avoid SDK batch queue issues
+   - Captures tokens, costs, latency
+   - Only for streaming operations
 
 ### Key Design Decisions
 
 **Authenticated Fetch Wrapper**
-- Fixes 401 errors in Next.js serverless environments
-- Intercepts Opik API calls only (not CSS, images, etc.)
-- Injects authentication headers automatically
-- Re-applied on every serverless function invocation
+- Fixes 401 errors in Next.js serverless
+- Intercepts Opik API calls only
+- Injects auth headers automatically
 
 **Singleton Pattern**
-- Single Opik client instance across the application
+- Single Opik client instance
 - Prevents multiple initializations
-- Manages environment variables for serverless contexts
+- Manages environment variables
 
-**Manual Tracing (Not opik-gemini)**
-- This project uses `@google/generative-ai` (official Google SDK)
-- The `opik-gemini` package requires `@google/genai` (different SDK)
-- We implement manual tracing via `TrackedGenerativeModel` class
-- Provides same functionality with more control
+**Manual Tracing**
+- Uses `@google/generative-ai` (official Google SDK)
+- Manual tracing via `TrackedGenerativeModel` class
+- More control than `opik-gemini` package
+
+---
 
 ## File Structure
 
 ```
 lib/opik/
 ├── README.md              # This file
-├── index.ts              # Main export file
-├── config.ts             # Singleton client + authenticated fetch wrapper
-├── client.ts             # Core tracing functions (traceAgentCall, evaluateAgentResponse)
-├── server.ts             # Server initialization for API routes
-└── gemini-wrapper.ts     # Tracked Gemini model with automatic tracing
+├── index.ts              # Main exports
+├── config.ts             # Client singleton + auth wrapper
+├── client.ts             # Core tracing functions
+├── server.ts             # Server initialization
+├── gemini-wrapper.ts     # Tracked Gemini model
+├── prompts.ts            # ✅ Prompt Library
+├── datasets.ts           # ✅ Datasets
+├── experiments.ts        # ✅ Experiments
+├── annotations.ts        # ✅ Annotation Queues
+├── evaluations.ts        # Evaluation pipeline
+├── metrics/              # Custom metrics
+└── feedback.ts           # User feedback
 ```
 
-### File Details
-
-| File | Purpose | Used By |
-|------|---------|---------|
-| **config.ts** | Opik client singleton with authenticated fetch wrapper | All Opik modules |
-| **client.ts** | Agent tracing and evaluation functions | All 6 AI agents |
-| **server.ts** | Logs Opik configuration status in API routes | API route handlers |
-| **gemini-wrapper.ts** | Tracked Gemini model for streaming and token counting | Gemini config |
-| **index.ts** | Exports all Opik functionality | External imports |
+---
 
 ## Configuration
 
 ### Environment Variables
 
-Add these to your `.env.local` file:
-
 ```bash
-# Opik Configuration
+# Required
 OPIK_API_KEY=your_api_key_here
-OPIK_WORKSPACE_NAME=your_workspace_name
-OPIK_PROJECT_NAME=impact-circle
-OPIK_URL_OVERRIDE=https://www.comet.com/opik/api  # Optional
+OPIK_WORKSPACE=your_workspace_name
+
+# Optional
+OPIK_PROJECT_NAME=Impact Circle
+OPIK_URL_OVERRIDE=https://www.comet.com/opik/api
 ```
 
-**Getting Opik Credentials:**
-
-1. Sign up at [https://www.comet.com/opik](https://www.comet.com/opik)
-2. Navigate to Settings → API Keys
-3. Create a new API key
-4. Copy your workspace name from the URL (e.g., `enricha-intl`)
+**Getting Credentials**:
+1. Sign up at [comet.com/opik](https://www.comet.com/opik)
+2. Settings → API Keys → Create new key
+3. Copy workspace name from URL
 
 ### Model Cost Configuration
 
-Model pricing is defined in `config.ts`:
+Model pricing in `config.ts`:
 
 ```typescript
 export const MODEL_COSTS = {
   "gemini-2.0-flash-exp": {
-    inputCostPer1M: 0.0,    // Free during experimental phase
+    inputCostPer1M: 0.0,    // Free during experimental
     outputCostPer1M: 0.0,
   },
   "gemini-1.5-pro": {
@@ -133,43 +344,30 @@ export const MODEL_COSTS = {
 };
 ```
 
-Update these prices when Google changes their pricing.
+---
 
-## Usage
+## Usage Examples
 
 ### 1. Tracing AI Agent Calls
 
-**All AI agents should use `traceAgentCall()` to wrap their main logic:**
-
 ```typescript
-// lib/ai/agents/skill-matcher.ts
 import { traceAgentCall } from "@/lib/opik";
 
 export async function matchUserWithOpportunities(userId: string) {
   return await traceAgentCall(
-    "skill_matcher",                    // Agent name
-    { userId },                         // Input data
+    "skill_matcher",
+    { userId },
     async () => {
-      // Your agent logic here
       const user = await getUser(userId);
       const matches = await findMatches(user);
       return matches;
     },
-    { source: "api", version: "v1" }   // Optional metadata
+    { source: "api", version: "v1" }
   );
 }
 ```
 
-**What gets traced:**
-- Agent name and input data
-- Execution duration (ms)
-- Success/error status
-- Output data or error message
-- Custom metadata and tags
-
 ### 2. Using Tracked Gemini Models
-
-**For streaming LLM calls with automatic tracing:**
 
 ```typescript
 import { createTrackedModel } from "@/lib/opik";
@@ -179,11 +377,11 @@ const model = createTrackedModel("gemini-2.0-flash-exp", {
   userId: "123"
 });
 
-// Streaming with automatic tracing
-const stream = model.generateContentStream("Find volunteer opportunities", {
+// Streaming with auto-tracing
+const stream = model.generateContentStream("Find opportunities", {
   operation: "find_opportunities",
-  tags: ["matching", "volunteers"],
-  metadata: { location: "San Francisco" }
+  tags: ["matching"],
+  metadata: { location: "SF" }
 });
 
 for await (const chunk of stream) {
@@ -191,18 +389,7 @@ for await (const chunk of stream) {
 }
 ```
 
-**For non-streaming calls (uses agent-level tracing):**
-
-```typescript
-const model = createTrackedModel("gemini-2.0-flash-exp");
-const response = await model.generateContent("Hello");
-// No model-level trace created (avoids SDK batch queue issues)
-// Wrap with traceAgentCall() for agent-level tracing
-```
-
 ### 3. Evaluating Agent Responses
-
-**Use LLM-as-judge to evaluate response quality:**
 
 ```typescript
 import { evaluateAgentResponse } from "@/lib/opik";
@@ -215,183 +402,114 @@ const evaluation = await evaluateAgentResponse(
 );
 
 console.log(evaluation.scores);
-// {
-//   safety: 95,
-//   personalization: 88,
-//   actionability: 92,
-//   evidenceBased: 90,
-//   overall: 91
-// }
+// { safety: 95, personalization: 88, actionability: 92, ... }
 ```
 
 ### 4. Server Route Initialization
 
-**Add to API routes that use Opik tracing:**
-
 ```typescript
-// app/api/matching/recommend/route.ts
 import { initOpikServer } from "@/lib/opik";
 
 export async function POST(request: Request) {
-  initOpikServer(); // Logs "✅ Opik configured for this route"
+  initOpikServer(); // Logs Opik configuration status
 
   // Your API logic with traceAgentCall()
 }
 ```
 
-## Examples
+---
 
-### Example 1: Complete Agent Integration
+## Quick Start
 
-```typescript
-// lib/ai/agents/engagement-coach.ts
-import { traceAgentCall } from "@/lib/opik";
-import { getModel } from "@/lib/gemini/config";
+### Initialize All Features
 
-export async function generateEngagementAdvice(userId: string) {
-  return await traceAgentCall(
-    "engagement_coach",
-    { userId },
-    async () => {
-      // Get user context
-      const user = await getUserProfile(userId);
-      const history = await getEngagementHistory(userId);
-
-      // Generate advice using Gemini
-      const model = getModel("FLASH", false);
-      const prompt = `Generate engagement advice for: ${JSON.stringify(user)}`;
-      const result = await model.generateContent(prompt);
-
-      return {
-        advice: result.response.text(),
-        confidence: 0.85,
-        timestamp: new Date().toISOString()
-      };
-    },
-    {
-      source: "engagement_api",
-      userType: user.type
-    }
-  );
-}
+```bash
+# One-command setup
+npx tsx scripts/setup-opik-features.ts
 ```
 
-### Example 2: Streaming with Full Tracing
+This script:
+- ✅ Uploads all 6 agent prompts
+- ✅ Creates skill-matcher-sample dataset
+- ✅ Displays configured experiments
+- ✅ Displays configured annotation queues
 
-```typescript
-import { createTrackedModel } from "@/lib/opik";
+### Test All Features
 
-export async function* generateImpactReport(projectId: string) {
-  const model = createTrackedModel("gemini-1.5-pro", {
-    agent: "impact_measurement",
-    projectId
-  });
-
-  const prompt = `Generate impact report for project ${projectId}`;
-
-  // Automatically traces: tokens, cost, latency, chunks
-  const stream = model.generateContentStream(prompt, {
-    operation: "generate_impact_report",
-    tags: ["reporting", "impact"],
-    metadata: { format: "markdown" }
-  });
-
-  for await (const chunk of stream) {
-    yield chunk.text();
-  }
-}
+```bash
+npx tsx scripts/test-opik-features.ts
 ```
 
-### Example 3: Token Counting Before Generation
+Tests:
+- Experiment variant assignment (consistency check)
+- Annotation queue functionality
+- Prompt Library retrieval
 
-```typescript
-import { createTrackedModel } from "@/lib/opik";
+### View in Dashboard
 
-const model = createTrackedModel("gemini-2.0-flash-exp");
+1. Go to [comet.com](https://www.comet.com)
+2. Navigate to Opik section
+3. View tabs:
+   - **Prompt Library** - 6 prompts
+   - **Datasets** - skill-matcher-sample
+   - **Traces** - Real-time agent calls
+   - **Experiments** - A/B test results
+   - **Annotations** - Queued items for review
 
-// Count tokens to estimate cost
-const longPrompt = "...very long prompt...";
-const tokenCount = await model.countTokens(longPrompt, {
-  operation: "estimate_prompt_cost",
-  metadata: { userId: "123" }
-});
-
-console.log(`Estimated cost: $${(tokenCount / 1_000_000) * 0.35}`);
-
-// Proceed with generation if under budget
-if (tokenCount < 10000) {
-  const result = await model.generateContent(longPrompt);
-}
-```
+---
 
 ## Troubleshooting
 
-### Issue: 401 Authentication Errors
+### 401 Authentication Errors
 
-**Symptoms:**
-```
-Error: 401 Unauthorized - Batch queue error
-```
+**Solution**: Already fixed by authenticated fetch wrapper.
 
-**Solution:**
-This is already fixed by the authenticated fetch wrapper in `config.ts`. If you still see this:
-1. Verify `OPIK_API_KEY` and `OPIK_WORKSPACE_NAME` are set
-2. Check the API key is valid in Comet dashboard
-3. Ensure you're calling `getOpikClient()` which applies the fetch wrapper
+If still occurring:
+1. Verify `OPIK_API_KEY` is set
+2. Check API key validity in Comet dashboard
+3. Ensure using `getOpikClient()`
 
-### Issue: Traces Not Appearing in Dashboard
+### Traces Not Appearing
 
-**Symptoms:**
-Agent runs successfully but no traces in Opik dashboard.
+**Solutions**:
+1. Check environment variables
+2. Verify `traceAgentCall()` is used
+3. Ensure `trace.end()` is called
+4. Check `opikClient.flush()`
+5. Review server logs for errors
 
-**Solution:**
-1. Check environment variables are set correctly
-2. Verify you're using `traceAgentCall()` wrapper
-3. Ensure `trace.end()` is called (automatic in `traceAgentCall`)
-4. Check if `opikClient.flush()` is being called
-5. Look for errors in server logs
+### Datasets Failing
 
-### Issue: TypeScript Errors After Cleanup
+**Error**: `Dataset already exists`
 
-**Symptoms:**
-```
-Module '"@/lib/opik"' has no exported member 'traceLLMCall'
+**Solution**: This is success! Dataset was created previously.
+
+To recreate:
+```typescript
+import { deleteDataset } from "@/lib/opik/datasets";
+await deleteDataset("skill-matcher-sample");
 ```
 
-**Solution:**
-These functions were removed during cleanup. Use instead:
+### TypeScript Errors
+
+**Old functions removed**:
 - ❌ `traceLLMCall()` → ✅ `traceAgentCall()`
-- ❌ `flushOpik()` → ✅ `flushTraces()` from config
-- ❌ `logExperiment()` → ✅ Use `traceAgentCall()` with metadata
+- ❌ `flushOpik()` → ✅ `flushTraces()`
 
-### Issue: High Costs
+### High Costs
 
-**Symptoms:**
-Unexpectedly high Gemini API costs.
+**Solutions**:
+1. Check Opik dashboard for token usage
+2. Use `model.countTokens()` to estimate
+3. Switch to `gemini-2.0-flash-exp` (free)
+4. Optimize prompts
+5. Review `calculateModelCost()` pricing
 
-**Solution:**
-1. Check Opik dashboard for token usage by agent
-2. Use `model.countTokens()` to estimate costs before generation
-3. Switch from `gemini-1.5-pro` to `gemini-2.0-flash-exp` (free)
-4. Optimize prompts to reduce token usage
-5. Review `calculateModelCost()` in config.ts for pricing
-
-### Issue: Serverless Environment Issues
-
-**Symptoms:**
-Opik works locally but fails in production (Vercel/Netlify).
-
-**Solution:**
-The authenticated fetch wrapper handles this. Verify:
-1. Environment variables are set in production
-2. `getOpikClient()` is called on every serverless function invocation
-3. Check serverless function logs for Opik initialization messages
+---
 
 ## Advanced Topics
 
 ### Custom Tags and Metadata
-
-Organize traces with custom tags:
 
 ```typescript
 import { TRACE_TAGS, getEnvironmentTag } from "@/lib/opik/config";
@@ -402,16 +520,13 @@ await traceAgentCall(
   agentFn,
   {
     environment: getEnvironmentTag(),
-    customTag: "high_priority",
-    userId: "123",
-    experimentId: "v2_algorithm"
+    experimentId: "v2_algorithm",
+    userId: "123"
   }
 );
 ```
 
 ### Graceful Shutdown
-
-Flush pending traces before shutdown:
 
 ```typescript
 import { shutdownOpik } from "@/lib/opik/config";
@@ -424,8 +539,6 @@ process.on("SIGTERM", async () => {
 
 ### Cost Tracking
 
-Track costs by agent:
-
 ```typescript
 import { calculateModelCost } from "@/lib/opik/config";
 
@@ -435,15 +548,25 @@ const cost = calculateModelCost(
   outputTokens
 );
 
-console.log(`This call cost: $${cost.toFixed(4)}`);
+console.log(`Cost: $${cost.toFixed(4)}`);
 ```
+
+---
 
 ## Resources
 
-- [Opik Documentation](https://www.comet.com/docs/opik)
+### Documentation
+- [Opik Docs](https://www.comet.com/docs/opik)
 - [Opik TypeScript SDK](https://www.comet.com/docs/opik/integrations/typescript-sdk)
-- [Gemini API Documentation](https://ai.google.dev/docs)
-- [Impact Circle AI Agents](../ai/agents/)
+- [Gemini API Docs](https://ai.google.dev/docs)
+- [Impact Circle Docs](../../DOCUMENTATION.md)
+
+### Related Files
+- [AI Agents](../ai/agents/) - All 6 agents
+- [Setup Script](../../scripts/setup-opik-features.ts)
+- [Test Script](../../scripts/test-opik-features.ts)
+
+---
 
 ## Contributing
 
@@ -452,9 +575,25 @@ When adding new AI agents:
 1. ✅ Wrap main logic with `traceAgentCall()`
 2. ✅ Use descriptive agent names (lowercase, underscores)
 3. ✅ Include relevant metadata (userId, source, version)
-4. ✅ Test that traces appear in Opik dashboard
-5. ✅ Document any new tracing patterns here
+4. ✅ Test traces appear in Opik dashboard
+5. ✅ Document new tracing patterns here
 
-## License
+---
 
-This Opik integration is part of Impact Circle and follows the same license.
+## Production Checklist
+
+Before deploying:
+
+- [ ] Set `OPIK_API_KEY` in production
+- [ ] Enable tracing for all agent calls
+- [ ] Configure monitoring alerts
+- [ ] Set up annotation queues
+- [ ] Run baseline evaluations
+- [ ] Enable A/B testing
+- [ ] Configure retention policies
+
+---
+
+**Built with ❤️ using Opik for production-grade AI observability**
+
+For complete project documentation, see [DOCUMENTATION.md](../../DOCUMENTATION.md)

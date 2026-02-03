@@ -13,6 +13,10 @@ import {
   ArrowRight,
   Target,
   Award,
+  Brain,
+  Zap,
+  AlertCircle,
+  Lightbulb,
 } from "lucide-react";
 
 interface DashboardStats {
@@ -31,10 +35,47 @@ export default function DashboardPage() {
     impactScore: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [aiInsights, setAiInsights] = useState<any>(null);
+  const [engagement, setEngagement] = useState<any>(null);
+  const [loadingInsights, setLoadingInsights] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
+    loadAIInsights();
   }, []);
+
+  const loadAIInsights = async () => {
+    setLoadingInsights(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+
+      const [insightsRes, engagementRes] = await Promise.all([
+        fetch("/api/insights/comprehensive", {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${session.access_token}` },
+        }),
+        fetch("/api/engagement/check", {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${session.access_token}` },
+        }),
+      ]);
+
+      if (insightsRes.ok) {
+        const data = await insightsRes.json();
+        setAiInsights(data.insights);
+      }
+
+      if (engagementRes.ok) {
+        const data = await engagementRes.json();
+        setEngagement(data.engagement);
+      }
+    } catch (error) {
+      console.error("Error loading AI insights:", error);
+    } finally {
+      setLoadingInsights(false);
+    }
+  };
 
   const loadDashboardData = async () => {
     try {
@@ -139,13 +180,153 @@ export default function DashboardPage() {
             icon={<TrendingUp className="w-5 h-5" />}
             title="View Your Impact"
             description="See the difference you've made"
-            href="/profile"
+            href="/impact"
             color="purple"
           />
         </div>
       </div>
 
-      
+      {/* AI Insights & Engagement */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* AI Insights - Master Coordinator Agent */}
+        <div className="card bg-gradient-to-br from-purple-50 to-primary-50 border-2 border-purple-200">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Brain className="w-6 h-6 text-purple-600" />
+              <div>
+                <h2 className="heading-3">AI Insights</h2>
+                <p className="text-xs text-gray-600">Master Coordinator Agent</p>
+              </div>
+            </div>
+            <button
+              onClick={loadAIInsights}
+              disabled={loadingInsights}
+              className="btn btn-sm bg-purple-100 text-purple-700 hover:bg-purple-200"
+            >
+              {loadingInsights ? "Loading..." : "Refresh"}
+            </button>
+          </div>
+          {!loadingInsights && aiInsights ? (
+            <div>
+              {aiInsights.personalizedRecommendations && (
+                <div className="mb-4">
+                  <h4 className="font-semibold text-sm text-gray-700 mb-2 flex items-center gap-1">
+                    <Lightbulb className="w-4 h-4" />
+                    For You
+                  </h4>
+                  <ul className="space-y-2">
+                    {aiInsights.personalizedRecommendations.slice(0, 3).map((rec: string, idx: number) => (
+                      <li key={idx} className="text-sm text-gray-700 pl-4 border-l-2 border-purple-300">
+                        {rec}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {aiInsights.impactOpportunities && (
+                <div>
+                  <h4 className="font-semibold text-sm text-gray-700 mb-2 flex items-center gap-1">
+                    <Zap className="w-4 h-4" />
+                    Impact Opportunities
+                  </h4>
+                  <ul className="space-y-2">
+                    {aiInsights.impactOpportunities.slice(0, 2).map((opp: string, idx: number) => (
+                      <li key={idx} className="text-sm text-gray-700 pl-4 border-l-2 border-purple-300">
+                        {opp}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Brain className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 mb-3">Get personalized insights from AI</p>
+              <button
+                onClick={loadAIInsights}
+                disabled={loadingInsights}
+                className="btn btn-sm bg-purple-600 text-white hover:bg-purple-700"
+              >
+                {loadingInsights ? "Loading..." : "Get Insights"}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Engagement Status - Engagement Coach Agent */}
+        <div className={`card border-2 ${
+          engagement?.status === 'at_risk'
+            ? 'bg-warning-50 border-warning-300'
+            : engagement?.status === 'declining'
+            ? 'bg-orange-50 border-orange-300'
+            : 'bg-success-50 border-success-300'
+        }`}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              {engagement?.status === 'at_risk' || engagement?.status === 'declining' ? (
+                <AlertCircle className="w-6 h-6 text-warning-600" />
+              ) : (
+                <Zap className="w-6 h-6 text-success-600" />
+              )}
+              <div>
+                <h2 className="heading-3">Engagement Check</h2>
+                <p className="text-xs text-gray-600">Engagement Coach Agent</p>
+              </div>
+            </div>
+            <button
+              onClick={loadAIInsights}
+              disabled={loadingInsights}
+              className="btn btn-sm bg-white text-gray-700 hover:bg-gray-100"
+            >
+              {loadingInsights ? "Checking..." : "Check Now"}
+            </button>
+          </div>
+          {!loadingInsights && engagement ? (
+            <div>
+              <div className="mb-3">
+                <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                  engagement.status === 'at_risk'
+                    ? 'bg-warning-100 text-warning-800'
+                    : engagement.status === 'declining'
+                    ? 'bg-orange-100 text-orange-800'
+                    : 'bg-success-100 text-success-800'
+                }`}>
+                  {engagement.status === 'at_risk' ? '⚠️ Needs Attention' :
+                   engagement.status === 'declining' ? '📉 Declining' :
+                   '✅ Active'}
+                </span>
+              </div>
+              {engagement.suggestions && engagement.suggestions.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-sm text-gray-700 mb-2">Suggestions:</h4>
+                  <ul className="space-y-2">
+                    {engagement.suggestions.slice(0, 3).map((sug: string, idx: number) => (
+                      <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
+                        <span className="text-success-600 mt-0.5">•</span>
+                        {sug}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Zap className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 mb-3">Check your engagement status</p>
+              <button
+                onClick={loadAIInsights}
+                disabled={loadingInsights}
+                className="btn btn-sm bg-success-600 text-white hover:bg-success-700"
+              >
+                {loadingInsights ? "Checking..." : "Check Now"}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="card">
           <h2 className="heading-3 mb-4">Your Skills</h2>

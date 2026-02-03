@@ -1,6 +1,11 @@
 import { getModel, parseJsonResponse, MODELS } from "@/lib/gemini/config";
 import { SYSTEM_PROMPTS } from "../prompts/system-prompts";
-import type { User, CommunityIssue, MatchRecommendation, AgentResponse } from "@/types";
+import type {
+  User,
+  CommunityIssue,
+  MatchRecommendation,
+  AgentResponse,
+} from "@/types";
 import { traceAgentCall, evaluateAgentResponse } from "@/lib/opik/client";
 
 export class SkillMatcherAgent {
@@ -10,11 +15,10 @@ export class SkillMatcherAgent {
     this.model = getModel("FLASH");
   }
 
-  
   async matchUserToIssues(
     user: User,
     availableIssues: CommunityIssue[],
-    limit: number = 5
+    limit: number = 5,
   ): Promise<AgentResponse<MatchRecommendation[]>> {
     const input = {
       userId: user.id,
@@ -29,42 +33,68 @@ export class SkillMatcherAgent {
       "skill_matcher_match",
       input,
       async () => {
-        const prompt = `${SYSTEM_PROMPTS.SKILL_MATCHER}`
+        const prompt = `${SYSTEM_PROMPTS.SKILL_MATCHER}
 
 Task: Match this user to the best community opportunities from the available issues.
 
 User Profile:
 - Name: ${user.fullName}
-- Location: ${user.location?.city || 'N/A'}, ${user.location?.state || 'N/A'}
-- Skills: ${user.skills?.join(", ") || 'No skills listed'}
-- Interests: ${user.interests?.join(", ") || 'No interests listed'}
-- Availability: ${user.availability?.hoursPerWeek || 'N/A'} hours/week on ${user.availability?.preferredDays?.join(", ") || 'Flexible'}
+- Location: ${user.location?.city || "N/A"}, ${user.location?.state || "N/A"}
+- Skills: ${user.skills?.join(", ") || "No skills listed"}
+- Interests: ${user.interests?.join(", ") || "No interests listed"}
+- Availability: ${user.availability?.hoursPerWeek || "N/A"} hours/week on ${
+          user.availability?.preferredDays?.join(", ") || "Flexible"
+        }
 
 Available Issues:
-${availableIssues.map((issue, idx) => `
+${availableIssues
+  .map(
+    (issue, idx) => `
 ${idx + 1}. ${issue.title}
    - Category: ${issue.category}
    - Description: ${issue.description}
-   - Skills Needed: ${issue.skillsNeeded?.join(", ") || 'No specific skills required'}
-   - Time Commitment: ~${issue.estimatedHours || 'TBD'} hours
+   - Skills Needed: ${
+     issue.skillsNeeded?.join(", ") || "No specific skills required"
+   }
+   - Time Commitment: ~${issue.estimatedHours || "TBD"} hours
    - Urgency: ${issue.urgency}
    - ID: ${issue.id}
-`).join("\n")}
+`,
+  )
+  .join("\n")}
 
-Find the top ${limit} best matches for this user. Consider:
-1. Skill alignment (both exact and transferable skills)
-2. Interest alignment
-3. Time commitment vs availability
-4. Location proximity
-5. Urgency and impact potential
-6. Personal growth opportunities
+IMPORTANT: You MUST return at least ${Math.min(limit, availableIssues.length)} matches, even if they aren't perfect fits. Consider:
+
+1. **Skill alignment**: Look for BOTH exact matches AND transferable skills
+   - Example: "social media" can transfer to "communication" or "marketing"
+   - Example: "project management" helps with ANY organized activity
+   - Example: "empathy" and "patience" are valuable for MOST volunteer work
+
+2. **Interest alignment**: Broad interpretation allowed
+   - "education" interest → teaching, tutoring, mentoring opportunities
+   - "environment" → gardening, cleanup, sustainability
+   - "community-development" → almost ANY local issue
+
+3. **Time commitment vs availability**: Flexible matching
+4. **Location proximity**: Same city/state is good
+5. **Urgency and impact potential**
+6. **Personal growth opportunities**
+
+**Scoring Guidelines**:
+- 80-100: Excellent fit with direct skill/interest match
+- 60-79: Good fit with transferable skills or related interests
+- 40-59: Moderate fit where user can contribute meaningfully
+- 20-39: Basic fit where any willing volunteer helps
+- Below 20: Only if truly no connection at all
 
 For each match, provide:
 - issueId: The issue ID
-- matchScore: 0-100 score
+- matchScore: 0-100 score (be generous, most should be 40+)
 - reasoning: Why this is a good match for THIS specific user
-- strengths: What unique value the user brings
-- considerations: Any potential challenges
+- strengths: What unique value the user brings (find something positive!)
+- considerations: Any potential challenges (optional, can be empty)
+
+**You MUST return ${Math.min(limit, availableIssues.length)} matches.** Be creative in finding connections between user skills/interests and available opportunities.
 
 Respond in JSON format:
 {
@@ -73,8 +103,8 @@ Respond in JSON format:
       "issueId": "...",
       "matchScore": 0-100,
       "reasoning": "...",
-      "strengths": [],
-      "considerations": []
+      "strengths": ["..."],
+      "considerations": ["..."]
     }
   ]
 }`;
@@ -92,7 +122,6 @@ Respond in JSON format:
           };
         }
 
-        
         const recommendations: MatchRecommendation[] = parsed.matches
           .map((match) => {
             const issue = availableIssues.find((i) => i.id === match.issueId);
@@ -109,12 +138,11 @@ Respond in JSON format:
           })
           .filter((m): m is MatchRecommendation => m !== null);
 
-        
         await evaluateAgentResponse(
           "skill_matcher",
           input,
           { matches: parsed.matches },
-          MODELS.FLASH
+          MODELS.FLASH,
         );
 
         return {
@@ -127,30 +155,28 @@ Respond in JSON format:
           },
         };
       },
-      { userId: user.id }
+      { userId: user.id },
     );
   }
 
-  
   async explainMatch(
     user: User,
-    issue: CommunityIssue
-  ): Promise<AgentResponse<{
-    fitScore: number;
-    explanation: string;
-    skillGaps: string[];
-    growthOpportunities: string[];
-  }>> {
+    issue: CommunityIssue,
+  ): Promise<
+    AgentResponse<{
+      fitScore: number;
+      explanation: string;
+      skillGaps: string[];
+      growthOpportunities: string[];
+    }>
+  > {
     const input = {
       userId: user.id,
       issueId: issue.id,
     };
 
-    return traceAgentCall(
-      "skill_matcher_explain",
-      input,
-      async () => {
-        const prompt = `${SYSTEM_PROMPTS.SKILL_MATCHER}`
+    return traceAgentCall("skill_matcher_explain", input, async () => {
+      const prompt = `${SYSTEM_PROMPTS.SKILL_MATCHER}
 
 Task: Provide a detailed explanation of how well this user fits this opportunity.
 
@@ -179,54 +205,51 @@ Respond in JSON format:
   "growthOpportunities": []
 }`;
 
-        const result = await this.model.generateContent(prompt);
-        const text = result.response.text();
-        const explanation = parseJsonResponse<{
-          fitScore: number;
-          explanation: string;
-          skillGaps: string[];
-          growthOpportunities: string[];
-        }>(text);
+      const result = await this.model.generateContent(prompt);
+      const text = result.response.text();
+      const explanation = parseJsonResponse<{
+        fitScore: number;
+        explanation: string;
+        skillGaps: string[];
+        growthOpportunities: string[];
+      }>(text);
 
-        if (!explanation) {
-          return {
-            success: false,
-            error: "Failed to generate explanation",
-          };
-        }
-
+      if (!explanation) {
         return {
-          success: true,
-          data: explanation,
-          confidence: 0.85,
+          success: false,
+          error: "Failed to generate explanation",
         };
       }
-    );
+
+      return {
+        success: true,
+        data: explanation,
+        confidence: 0.85,
+      };
+    });
   }
 
-  
   async suggestSkillDevelopment(
     user: User,
-    desiredImpactAreas: string[]
-  ): Promise<AgentResponse<{
-    recommendations: Array<{
-      skill: string;
-      why: string;
-      howToLearn: string;
-      impactPotential: string;
-    }>;
-  }>> {
+    desiredImpactAreas: string[],
+  ): Promise<
+    AgentResponse<{
+      recommendations: Array<{
+        skill: string;
+        why: string;
+        howToLearn: string;
+        impactPotential: string;
+      }>;
+    }>
+  > {
     const input = {
       userId: user.id,
       currentSkills: user.skills,
       desiredAreas: desiredImpactAreas,
     };
 
-    return traceAgentCall(
-      "skill_matcher_develop",
-      input,
-      async () => {
-        const prompt = `${SYSTEM_PROMPTS.SKILL_MATCHER}`
+    return traceAgentCall("skill_matcher_develop", input, async () => {
+      const prompt = `${SYSTEM_PROMPTS.SKILL_MATCHER}
 
 Task: Suggest skills this user should develop to increase their community impact.
 
@@ -258,26 +281,25 @@ Respond in JSON format:
   ]
 }`;
 
-        const result = await this.model.generateContent(prompt);
-        const text = result.response.text();
-        const suggestions = parseJsonResponse<{
-          recommendations: any[];
-        }>(text);
+      const result = await this.model.generateContent(prompt);
+      const text = result.response.text();
+      const suggestions = parseJsonResponse<{
+        recommendations: any[];
+      }>(text);
 
-        if (!suggestions) {
-          return {
-            success: false,
-            error: "Failed to generate skill suggestions",
-          };
-        }
-
+      if (!suggestions) {
         return {
-          success: true,
-          data: suggestions,
-          confidence: 0.82,
+          success: false,
+          error: "Failed to generate skill suggestions",
         };
       }
-    );
+
+      return {
+        success: true,
+        data: suggestions,
+        confidence: 0.82,
+      };
+    });
   }
 }
 

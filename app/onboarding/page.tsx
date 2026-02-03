@@ -7,13 +7,35 @@ import { supabase } from "@/lib/supabase/client";
 import { MapPin, Briefcase, Heart, Clock, ArrowRight, ArrowLeft, Loader2, CheckCircle } from "lucide-react";
 import { commonSkills } from "@/lib/data/demo-data";
 
-const US_STATES = [
-  "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
-  "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
-  "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
-  "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
-  "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"
+const NIGERIA_STATES = [
+  "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa",
+  "Benue", "Borno", "Cross River", "Delta", "Ebonyi", "Edo",
+  "Ekiti", "Enugu", "Gombe", "Imo", "Jigawa", "Kaduna",
+  "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos",
+  "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo",
+  "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara", "FCT"
 ];
+
+const NIGERIA_CITIES: Record<string, string[]> = {
+  "Lagos": ["Ikeja", "Victoria Island", "Lekki", "Surulere", "Yaba", "Ikoyi", "Ajah", "Maryland", "Festac"],
+  "Abuja": ["Garki", "Wuse", "Maitama", "Asokoro", "Gwarinpa", "Kubwa", "Lugbe", "Jabi"],
+  "Kano": ["Kano Municipal", "Fagge", "Dala", "Gwale", "Tarauni", "Nassarawa"],
+  "Ibadan": ["Ibadan North", "Ibadan South", "Egbeda", "Akinyele", "Lagelu", "Ido"],
+  "Port Harcourt": ["Port Harcourt", "Obio-Akpor", "Eleme", "Okrika", "Degema"],
+  "Benin City": ["Benin City", "Ikpoba-Okha", "Egor", "Oredo", "Ovia"],
+  "Kaduna": ["Kaduna North", "Kaduna South", "Zaria", "Kafanchan", "Sabon Gari"],
+  "Enugu": ["Enugu East", "Enugu North", "Enugu South", "Nsukka", "Udi"],
+  "Abia": ["Aba", "Umuahia", "Ohafia", "Arochukwu"],
+  "Akwa Ibom": ["Uyo", "Eket", "Ikot Ekpene", "Oron"],
+  "Anambra": ["Awka", "Onitsha", "Nnewi", "Ekwulobia"],
+  "Rivers": ["Port Harcourt", "Obio-Akpor", "Eleme", "Okrika"],
+  "Ogun": ["Abeokuta", "Ijebu Ode", "Sagamu", "Ota"],
+  "Oyo": ["Ibadan", "Ogbomoso", "Oyo", "Iseyin"],
+  "Delta": ["Asaba", "Warri", "Sapele", "Ughelli"],
+  "Edo": ["Benin City", "Auchi", "Ekpoma", "Uromi"],
+  "Imo": ["Owerri", "Orlu", "Okigwe", "Oguta"],
+  "FCT": ["Garki", "Wuse", "Maitama", "Asokoro", "Gwarinpa"],
+};
 
 const CATEGORIES = [
   { value: "environment", label: "Environment", icon: "🌱" },
@@ -38,15 +60,22 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Form data
+  
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
+  const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [skills, setSkills] = useState<string[]>([]);
   const [customSkill, setCustomSkill] = useState("");
   const [interests, setInterests] = useState<string[]>([]);
   const [hoursPerWeek, setHoursPerWeek] = useState(5);
   const [preferredDays, setPreferredDays] = useState<string[]>([]);
   const [preferredTimes, setPreferredTimes] = useState<string[]>([]);
+
+  const handleStateChange = (selectedState: string) => {
+    setState(selectedState);
+    setCity("");
+    setAvailableCities(NIGERIA_CITIES[selectedState] || []);
+  };
 
   useEffect(() => {
     if (!user) {
@@ -102,7 +131,7 @@ export default function OnboardingPage() {
     setSaving(true);
 
     try {
-      // Get current session token
+      
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session?.access_token) {
@@ -157,7 +186,7 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-success-50 py-8 px-4">
       <div className="max-w-2xl mx-auto">
-        {/* Progress */}
+        
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gray-700">
@@ -173,9 +202,9 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        {/* Content */}
+        
         <div className="card">
-          {/* Step 1: Location */}
+          
           {step === 1 && (
             <div className="space-y-6">
               <div className="text-center">
@@ -190,35 +219,43 @@ export default function OnboardingPage() {
 
               <div className="space-y-4 max-w-md mx-auto">
                 <div className="form-group">
-                  <label htmlFor="city" className="form-label">
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    id="city"
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    className="input"
-                    placeholder="San Francisco"
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
                   <label htmlFor="state" className="form-label">
                     State
                   </label>
                   <select
                     id="state"
                     value={state}
-                    onChange={(e) => setState(e.target.value)}
+                    onChange={(e) => handleStateChange(e.target.value)}
                     className="select"
                     required
                   >
                     <option value="">Select state</option>
-                    {US_STATES.map((st) => (
+                    {NIGERIA_STATES.map((st) => (
                       <option key={st} value={st}>
                         {st}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="city" className="form-label">
+                    City/LGA
+                  </label>
+                  <select
+                    id="city"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="select"
+                    required
+                    disabled={!state}
+                  >
+                    <option value="">
+                      {state ? "Select city/LGA" : "Select state first"}
+                    </option>
+                    {availableCities.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
                       </option>
                     ))}
                   </select>
@@ -227,7 +264,7 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* Step 2: Skills */}
+          
           {step === 2 && (
             <div className="space-y-6">
               <div className="text-center">
@@ -247,8 +284,7 @@ export default function OnboardingPage() {
                       key={skill}
                       type="button"
                       onClick={() => toggleSkill(skill)}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                        skills.includes(skill)
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${skills.includes(skill)
                           ? "bg-primary-600 text-white"
                           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                       }`}
@@ -285,7 +321,7 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* Step 3: Interests */}
+          
           {step === 3 && (
             <div className="space-y-6">
               <div className="text-center">
@@ -304,8 +340,7 @@ export default function OnboardingPage() {
                     key={category.value}
                     type="button"
                     onClick={() => toggleInterest(category.value)}
-                    className={`p-4 rounded-xl border-2 transition-all text-left ${
-                      interests.includes(category.value)
+                    className={`p-4 rounded-xl border-2 transition-all text-left ${interests.includes(category.value)
                         ? "border-primary-500 bg-primary-50"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
@@ -324,7 +359,6 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* Step 4: Availability */}
           {step === 4 && (
             <div className="space-y-6">
               <div className="text-center">
@@ -364,8 +398,7 @@ export default function OnboardingPage() {
                         key={day}
                         type="button"
                         onClick={() => toggleDay(day)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                          preferredDays.includes(day)
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${preferredDays.includes(day)
                             ? "bg-success-600 text-white"
                             : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                         }`}
@@ -384,8 +417,7 @@ export default function OnboardingPage() {
                         key={time}
                         type="button"
                         onClick={() => toggleTime(time)}
-                        className={`w-full p-3 rounded-lg text-left transition-colors ${
-                          preferredTimes.includes(time)
+                        className={`w-full p-3 rounded-lg text-left transition-colors ${preferredTimes.includes(time)
                             ? "bg-success-600 text-white"
                             : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                         }`}
@@ -399,7 +431,7 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* Actions */}
+          
           <div className="flex gap-3 mt-8">
             {step > 1 && (
               <button

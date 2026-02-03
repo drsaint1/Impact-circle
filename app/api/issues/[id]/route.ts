@@ -34,7 +34,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    
+
     const { data: issue, error } = await supabase
       .from("issues")
       .select("*")
@@ -49,7 +49,7 @@ export async function GET(
       );
     }
 
-    
+
     const { data: circles } = await supabase
       .from("circles")
       .select(`
@@ -59,9 +59,22 @@ export async function GET(
       .eq("issue_id", params.id)
       .in("status", ["forming", "active"]);
 
+    const transformedIssue = {
+      ...issue,
+      skillsNeeded: issue.skills_needed || [],
+      volunteersNeeded: issue.volunteers_needed || 0,
+      volunteersJoined: issue.volunteers_joined || 0,
+      estimatedHours: issue.estimated_hours || 0,
+      createdBy: issue.created_by,
+      createdAt: issue.created_at,
+      aiGenerated: issue.ai_generated,
+      startDate: issue.start_date,
+      endDate: issue.end_date,
+    };
+
     return NextResponse.json({
       success: true,
-      issue,
+      issue: transformedIssue,
       circles: circles || [],
     });
   } catch (error: any) {

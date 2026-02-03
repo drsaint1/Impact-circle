@@ -1,41 +1,7 @@
-/**
- * Opik Client - Agent Tracing and Evaluation
- *
- * This module provides functions for tracing AI agent calls and evaluating their responses
- * using the official Opik SDK.
- *
- * @module lib/opik/client
- */
-
 import { getOpikClient } from "./config";
 import type { EvaluationResult, AgentPerformanceMetrics } from "@/types";
 
-/**
- * Trace an AI agent call with comprehensive monitoring
- *
- * This function wraps an agent execution with Opik tracing, capturing:
- * - Input/output data
- * - Execution duration
- * - Success/error status
- * - Custom metadata and tags
- *
- * @example
- * ```typescript
- * const result = await traceAgentCall(
- *   "skill_matcher",
- *   { userId: "123", skills: ["coding"] },
- *   async () => await matchSkills(user),
- *   { source: "api" }
- * );
- * ```
- *
- * @param agentName - Unique identifier for the agent (e.g., "skill_matcher", "community_intelligence")
- * @param input - Input data passed to the agent
- * @param agentFunction - The async function to execute and trace
- * @param metadata - Optional metadata to attach to the trace
- * @returns The result from the agent function
- * @throws Re-throws any error from the agent function after logging it
- */
+
 export async function traceAgentCall<T>(
   agentName: string,
   input: any,
@@ -44,7 +10,7 @@ export async function traceAgentCall<T>(
 ): Promise<T> {
   const opikClient = getOpikClient();
 
-  // If Opik is not configured, run without tracing
+  
   if (!opikClient) {
     console.log(`⚠️ Running ${agentName} without Opik tracing`);
     return await agentFunction();
@@ -52,7 +18,7 @@ export async function traceAgentCall<T>(
 
   const startTime = Date.now();
 
-  // Create trace using official Opik SDK
+  
   const trace = opikClient.trace({
     name: agentName,
     input: input,
@@ -64,11 +30,11 @@ export async function traceAgentCall<T>(
   });
 
   try {
-    // Execute the agent function
+    
     const output = await agentFunction();
     const duration = Date.now() - startTime;
 
-    // Update trace with successful result
+    
     trace.update({
       output: output as any,
       metadata: {
@@ -82,7 +48,7 @@ export async function traceAgentCall<T>(
 
     trace.end();
 
-    // Flush traces to ensure they're sent to Opik
+    
     opikClient.flush().catch((err) =>
       console.error("Failed to flush Opik trace:", err)
     );
@@ -94,7 +60,7 @@ export async function traceAgentCall<T>(
     const duration = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : String(error);
 
-    // Update trace with error information
+    
     trace.update({
       output: { error: errorMessage },
       metadata: {
@@ -109,7 +75,7 @@ export async function traceAgentCall<T>(
 
     trace.end();
 
-    // Flush traces to ensure error is logged
+    
     opikClient.flush().catch((err) =>
       console.error("Failed to flush Opik trace:", err)
     );
@@ -119,21 +85,7 @@ export async function traceAgentCall<T>(
   }
 }
 
-/**
- * Evaluate agent response quality using LLM-as-judge
- *
- * Uses Gemini to evaluate the quality of an agent's response across multiple dimensions:
- * - Safety: Is the response safe and appropriate?
- * - Personalization: How well is it tailored to the user?
- * - Actionability: Are recommendations clear and actionable?
- * - Evidence-Based: Is the response grounded in facts?
- *
- * @param agentType - Type of agent being evaluated
- * @param input - Input that was given to the agent
- * @param output - Output produced by the agent
- * @param model - Model name used for the original response
- * @returns Evaluation results with scores (0-100) and feedback
- */
+
 export async function evaluateAgentResponse(
   agentType: string,
   input: any,
@@ -170,7 +122,7 @@ Respond in JSON format:
     const result = await evaluatorModel.generateContent(evaluationPrompt);
     const text = result.response.text();
 
-    // Parse JSON from response, removing markdown code blocks if present
+    
     const cleaned = text
       .replace(/```json\n?/g, "")
       .replace(/```\n?/g, "")
@@ -197,7 +149,7 @@ Respond in JSON format:
   } catch (error) {
     console.error("Failed to evaluate agent response:", error);
 
-    // Return default evaluation on error
+    
     return {
       id: Math.random().toString(36).substr(2, 9),
       agentType,
@@ -217,14 +169,7 @@ Respond in JSON format:
   }
 }
 
-/**
- * Get agent performance metrics from Opik
- *
- * @param agentType - Type of agent to get metrics for
- * @returns Agent performance metrics or null if not yet implemented
- *
- * @todo Implement using Opik's REST API to fetch historical metrics
- */
+
 export async function getAgentMetrics(
   agentType: string
 ): Promise<AgentPerformanceMetrics | null> {

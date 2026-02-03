@@ -17,15 +17,20 @@ import {
   Sparkles,
 } from "lucide-react";
 import type { CommunityIssue } from "@/types";
+import { useToast } from "@/hooks/useToast";
+import { ToastContainer } from "@/components/ToastContainer";
 
 export default function IssueDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { profile } = useAuth();
+  const { toasts, toast, removeToast } = useToast();
   const [issue, setIssue] = useState<CommunityIssue | null>(null);
   const [circles, setCircles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [matchScore, setMatchScore] = useState<number | null>(null);
+  const [volunteering, setVolunteering] = useState(false);
+  const [showCircleSelect, setShowCircleSelect] = useState(false);
 
   useEffect(() => {
     loadIssueDetails();
@@ -68,6 +73,61 @@ export default function IssueDetailPage() {
     }
   };
 
+  const handleVolunteer = async () => {
+    if (!profile) {
+      toast.error("Please sign in to volunteer");
+      return;
+    }
+
+    if (circles.length === 0) {
+      toast.warning("No action circles found for this issue yet. This might be an older issue - try creating a new circle to get started!");
+      setTimeout(() => {
+        router.push(`/circles/create?issueId=${params.id}`);
+      }, 1500);
+      return;
+    }
+
+    if (circles.length === 1) {
+      await joinCircle(circles[0].id);
+    } else {
+      setShowCircleSelect(true);
+    }
+  };
+
+  const joinCircle = async (circleId: string) => {
+    setVolunteering(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        toast.error("Session expired. Please sign in again.");
+        return;
+      }
+
+      const response = await fetch(`/api/circles/${circleId}/join`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        toast.success("Successfully joined the circle!");
+        setShowCircleSelect(false);
+        router.push(`/circles/${circleId}`);
+      } else {
+        toast.error(result.error || "Failed to join circle");
+      }
+    } catch (error) {
+      console.error("Error joining circle:", error);
+      toast.error("Failed to join circle. Please try again.");
+    } finally {
+      setVolunteering(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -97,7 +157,9 @@ export default function IssueDetailPage() {
   const progress = (issue.volunteersJoined / issue.volunteersNeeded) * 100;
 
   return (
-    <div className="space-y-6 lg:space-y-8 max-w-5xl">
+    <>
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
+      <div className="space-y-6 lg:space-y-8 max-w-5xl">
       
       <button
         onClick={() => router.push("/discover")}
@@ -180,11 +242,24 @@ export default function IssueDetailPage() {
           </div>
         </div>
 
-        
+
         <div className="flex flex-col sm:flex-row gap-3">
-          <button className="btn btn-primary flex-1">
-            <Heart className="w-5 h-5 mr-2" />
-            Volunteer for This Issue
+          <button
+            onClick={handleVolunteer}
+            disabled={volunteering || !profile}
+            className="btn btn-primary flex-1"
+          >
+            {volunteering ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Joining...
+              </>
+            ) : (
+              <>
+                <Heart className="w-5 h-5 mr-2" />
+                Volunteer for This Issue
+              </>
+            )}
           </button>
           <button className="btn btn-secondary">Share</button>
         </div>
@@ -291,7 +366,7 @@ export default function IssueDetailPage() {
         </div>
       </div>
 
-      
+
       <div className="text-center text-sm text-gray-500">
         <Calendar className="w-4 h-4 inline mr-1" />
         Posted {new Date(issue.createdAt).toLocaleDateString("en-US", {
@@ -300,6 +375,49 @@ export default function IssueDetailPage() {
           year: "numeric",
         })}
       </div>
+
+
+      {showCircleSelect && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6">
+            <h2 className="heading-2 mb-4">Choose a Circle to Join</h2>
+            <p className="text-gray-600 mb-6">
+              Multiple circles are working on this issue. Choose which one you'd like to join:
+            </p>
+            <div className="space-y-3 mb-6">
+              {circles.map((circle: any) => (
+                <button
+                  key={circle.id}
+                  onClick={() => joinCircle(circle.id)}
+                  disabled={volunteering}
+                  className="w-full text-left p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 transition-colors"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-semibold text-gray-900">{circle.name}</h3>
+                    <span className={`badge ${
+                      circle.status === "active" ? "badge-success" : "badge-warning"
+                    }`}>
+                      {circle.status}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2">{circle.description}</p>
+                  <div className="text-xs text-gray-500">
+                    {circle.members?.length || 0}/{circle.max_members} members
+                  </div>
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowCircleSelect(false)}
+              disabled={volunteering}
+              className="btn btn-secondary w-full"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
+    </>
   );
 }

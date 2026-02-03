@@ -39,16 +39,16 @@ export async function createDataset(config: DatasetConfig): Promise<string> {
   }
 
   try {
-    const dataset = await opikClient.createDataset({
+    
+    await opikClient.api.datasets.createDataset({
       name: config.name,
       description: config.description,
     });
 
     console.log(`✅ Created dataset: ${config.name}`);
-    console.log(`   ID: ${dataset.id}`);
     console.log(`   Description: ${config.description}`);
 
-    return dataset.id;
+    return config.name; 
   } catch (error) {
     console.error(`Failed to create dataset ${config.name}:`, error);
     throw error;
@@ -66,10 +66,12 @@ export async function addDatasetItems(
   }
 
   try {
-    await opikClient.insertDatasetItems({
+    
+    await opikClient.api.datasets.createOrUpdateDatasetItems({
       datasetName,
       items: items.map((item) => ({
-        input: item.input,
+        source: "manual",
+        data: item.input,
         expectedOutput: item.expectedOutput,
         metadata: item.metadata,
       })),
@@ -90,7 +92,9 @@ export async function getDataset(name: string): Promise<any> {
   }
 
   try {
+    
     const dataset = await opikClient.getDataset({ name });
+    
     console.log(`📊 Loaded dataset: ${name} (${dataset.items?.length || 0} items)`);
     return dataset;
   } catch (error) {
@@ -107,6 +111,7 @@ export async function deleteDataset(name: string): Promise<void> {
   }
 
   try {
+    
     await opikClient.deleteDataset({ name });
     console.log(`🗑️ Deleted dataset: ${name}`);
   } catch (error) {
@@ -195,4 +200,15 @@ export async function createSkillMatcherSampleDataset(): Promise<void> {
 
   console.log(`✅ Sample dataset created with ${sampleItems.length} items`);
   console.log(`   Use: await getDataset("${datasetName}") to load it`);
+}
+
+
+export async function initializeStandardDatasets(): Promise<void> {
+  try {
+    await createSkillMatcherSampleDataset();
+    console.log("✅ All standard datasets created successfully");
+  } catch (error) {
+    console.error("Failed to initialize datasets:", error);
+    throw error;
+  }
 }

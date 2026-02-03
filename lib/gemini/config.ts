@@ -10,12 +10,12 @@ export const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
 // Model configurations for different use cases
 export const MODELS = {
-  // Using Gemini 2.0 Flash (with Tier 1 billing enabled)
-  FLASH: "gemini-2.0-flash-exp",
-  // Balanced model for most tasks
-  PRO: "gemini-2.0-flash-exp",
+  // Using Gemini 2.0 Flash (fast, stable, cost-effective)
+  FLASH: "gemini-2.0-flash",
+  // Balanced model for most tasks (better reasoning)
+  PRO: "gemini-2.5-pro",
   // For evaluation and critical tasks
-  EVAL: "gemini-2.0-flash-exp",
+  EVAL: "gemini-2.5-pro",
 } as const;
 
 // Safety settings
@@ -47,7 +47,10 @@ export const generationConfig = {
 };
 
 // Get model instance (with optional Opik tracing)
-export function getModel(modelName: keyof typeof MODELS = "FLASH", useTracking: boolean = true) {
+export function getModel(
+  modelName: keyof typeof MODELS = "FLASH",
+  useTracking: boolean = true,
+) {
   const modelId = MODELS[modelName];
 
   if (useTracking) {
@@ -80,7 +83,10 @@ export function getTrackedModel(modelName: keyof typeof MODELS = "FLASH") {
 export function parseJsonResponse<T>(text: string): T | null {
   try {
     // Remove markdown code blocks if present
-    const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    const cleaned = text
+      .replace(/```json\n?/g, "")
+      .replace(/```\n?/g, "")
+      .trim();
     return JSON.parse(cleaned) as T;
   } catch (error) {
     console.error("Failed to parse JSON response:", error);

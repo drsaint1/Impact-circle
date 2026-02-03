@@ -308,7 +308,7 @@ Respond in JSON format:
       "action_coordinator_resolve",
       input,
       async () => {
-        const prompt = `${SYSTEM_PROMPTS.ACTION_COORDINATOR} 
+        const prompt = `${SYSTEM_PROMPTS.ACTION_COORDINATOR}
 
 Task: Help resolve a conflict or challenge within this action circle.
 
@@ -349,6 +349,114 @@ Respond in JSON format:
           success: true,
           data: resolution,
           confidence: 0.78,
+        };
+      }
+    );
+  }
+
+  /**
+   * Plan activities for a circle working on an issue
+   * This is a simplified interface for the plan-activities API route
+   */
+  async planActions(params: {
+    issueId: string;
+    issueTitle: string;
+    issueDescription: string;
+    circleSize: number;
+    timeframe: string;
+  }): Promise<AgentResponse<{
+    phases: Array<{
+      name: string;
+      duration: string;
+      activities: Array<{
+        title: string;
+        description: string;
+        type: string;
+        assignedRoles: string[];
+        estimatedHours: number;
+      }>;
+    }>;
+    milestones: Array<{
+      name: string;
+      description: string;
+      targetDate: string;
+    }>;
+  }>> {
+    const input = {
+      issueId: params.issueId,
+      circleSize: params.circleSize,
+      timeframe: params.timeframe,
+    };
+
+    return traceAgentCall(
+      "action_coordinator_plan_activities",
+      input,
+      async () => {
+        const prompt = `${SYSTEM_PROMPTS.ACTION_COORDINATOR}
+
+Task: Create a detailed action plan for a circle to address this community issue.
+
+Issue: ${params.issueTitle}
+Description: ${params.issueDescription}
+Circle Size: ${params.circleSize} members
+Timeframe: ${params.timeframe}
+
+Create a phased action plan with:
+1. 3-4 distinct phases (e.g., Planning, Implementation, Evaluation)
+2. Specific activities for each phase
+3. Clear milestones to track progress
+4. Realistic timelines based on ${params.timeframe}
+
+Consider:
+- Start with relationship-building and planning
+- Build momentum with early wins
+- Include regular check-ins and reflection
+- End with impact measurement and celebration
+
+Respond in JSON format:
+{
+  "phases": [
+    {
+      "name": "Phase 1: Planning & Preparation",
+      "duration": "2 weeks",
+      "activities": [
+        {
+          "title": "Kickoff Meeting",
+          "description": "Get to know team members, align on goals and timeline",
+          "type": "meeting",
+          "assignedRoles": ["leader", "all members"],
+          "estimatedHours": 2
+        }
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "name": "Team Formation Complete",
+      "description": "All members onboarded and roles assigned",
+      "targetDate": "Week 1"
+    }
+  ]
+}`;
+
+        const result = await this.model.generateContent(prompt);
+        const text = result.response.text();
+        const actionPlan = parseJsonResponse<{
+          phases: any[];
+          milestones: any[];
+        }>(text);
+
+        if (!actionPlan) {
+          return {
+            success: false,
+            error: "Failed to generate action plan",
+          };
+        }
+
+        return {
+          success: true,
+          data: actionPlan,
+          confidence: 0.85,
         };
       }
     );

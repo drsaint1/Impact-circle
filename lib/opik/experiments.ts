@@ -284,3 +284,70 @@ export async function quickCompare(params: {
     metrics: params.metrics,
   });
 }
+
+
+
+function simpleHash(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash);
+}
+
+
+
+export function assignExperimentVariant(
+  experimentName: string,
+  userId: string
+): "control" | "variant_a" {
+  
+  const weights = { control: 50, variant_a: 50 };
+
+  const hash = simpleHash(`${experimentName}:${userId}`);
+  const total = weights.control + weights.variant_a;
+  const normalized = hash % total;
+
+  return normalized < weights.control ? "control" : "variant_a";
+}
+
+
+
+export async function trackExperimentFeedback(
+  experimentName: string,
+  variant: string,
+  userId: string,
+  feedback: Record<string, any>
+): Promise<void> {
+  const { getOpikClient } = await import("./config");
+  const opikClient = getOpikClient();
+
+  if (!opikClient) {
+    console.warn("Opik not configured, skipping experiment feedback tracking");
+    return;
+  }
+
+  try {
+    const trace = opikClient.trace({
+      name: `experiment_${experimentName}`,
+      input: { userId, variant },
+      output: feedback,
+      metadata: {
+        experimentName,
+        variant,
+        userId,
+        timestamp: new Date().toISOString(),
+      },
+      tags: ["experiment", experimentName, variant],
+    });
+
+    trace.end();
+    await opikClient.flush();
+
+    console.log(`📊 Tracked experiment feedback for ${experimentName}:${variant}`);
+  } catch (error) {
+    console.error("Failed to track experiment feedback:", error);
+  }
+}

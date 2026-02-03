@@ -87,28 +87,31 @@ Respond in JSON format:
   }
 
   /**
-   * Validate impact claims
+   * Validate impact claims with optional image evidence
    */
   async validateImpact(
     activity: Activity,
-    reportedMetrics: Record<string, number>
+    reportedMetrics: Record<string, number>,
+    evidenceImages?: string[] // Base64 encoded images
   ): Promise<AgentResponse<{
     valid: boolean;
     confidence: number;
     flags: string[];
     feedback: string;
+    imageAnalysis?: string;
   }>> {
     const input = {
       activityId: activity.id,
       activityType: activity.type,
       metrics: reportedMetrics,
+      hasImages: evidenceImages && evidenceImages.length > 0,
     };
 
     return traceAgentCall(
       "impact_measurement_validate",
       input,
       async () => {
-        const prompt = `${SYSTEM_PROMPTS.IMPACT_MEASUREMENT}
+        const basePrompt = `${SYSTEM_PROMPTS.IMPACT_MEASUREMENT}
 
 Task: Validate the reported impact metrics for realism and accuracy.
 
@@ -120,13 +123,64 @@ Duration: ${activity.completedDate && activity.scheduledDate
   : "Unknown"}
 
 Reported Impact:
-${Object.entries(reportedMetrics).map(([key, value]) => `- ${key}: ${value}`).join("\n")}
+${Object.entries(reportedMetrics).map(([key, value]) => `- ${key}: ${value}`).join("\n")}`;
 
-Evaluate:
+        let validation;
+
+        // If images are provided, use vision model for enhanced validation
+        if (evidenceImages && evidenceImages.length > 0) {
+          const visionPrompt = `${basePrompt}
+
+Evidence Images: ${evidenceImages.length} image(s) provided
+
+Analyze the provided images AND the reported metrics:
+1. Do the images show evidence of the claimed impact?
+2. Do the images match the activity description?
+3. Are the reported numbers consistent with what you see in the images?
+4. Do you see any red flags or inconsistencies between images and claims?
+5. What specific details from the images support or contradict the metrics?
+
+Respond in JSON format:
+{
+  "valid": true/false,
+  "confidence": 0.0-1.0,
+  "flags": ["list of concerns if any"],
+  "feedback": "Explanation of your assessment",
+  "imageAnalysis": "What you observed in the images and how it relates to the claims"
+}`;
+
+          // Prepare content with images for Gemini vision
+          const imageParts = evidenceImages.map((base64Image) => ({
+            inlineData: {
+              data: base64Image.split(',')[1] || base64Image, // Remove data:image/... prefix if present
+              mimeType: "image/jpeg", // Gemini supports jpeg, png, webp
+            },
+          }));
+
+          const result = await this.model.generateContent([
+            visionPrompt,
+            ...imageParts,
+          ]);
+
+          const text = result.response.text();
+          validation = parseJsonResponse<{
+            valid: boolean;
+            confidence: number;
+            flags: string[];
+            feedback: string;
+            imageAnalysis?: string;
+          }>(text);
+        } else {
+          // No images - use text-only validation
+          const textPrompt = `${basePrompt}
+
+Evaluate (without image evidence):
 1. Are these numbers realistic for this type of activity?
 2. Do the metrics make sense together?
 3. Are there any red flags (too high, suspiciously round numbers, impossible claims)?
 4. Is anything missing or suspicious?
+
+Note: No image evidence was provided, so validation is based only on reported numbers.
 
 Respond in JSON format:
 {
@@ -136,14 +190,15 @@ Respond in JSON format:
   "feedback": "Explanation of your assessment"
 }`;
 
-        const result = await this.model.generateContent(prompt);
-        const text = result.response.text();
-        const validation = parseJsonResponse<{
-          valid: boolean;
-          confidence: number;
-          flags: string[];
-          feedback: string;
-        }>(text);
+          const result = await this.model.generateContent(textPrompt);
+          const text = result.response.text();
+          validation = parseJsonResponse<{
+            valid: boolean;
+            confidence: number;
+            flags: string[];
+            feedback: string;
+          }>(text);
+        }
 
         if (!validation) {
           return {
@@ -163,9 +218,10 @@ Respond in JSON format:
         return {
           success: true,
           data: validation,
-          confidence: 0.91,
+          confidence: evidenceImages && evidenceImages.length > 0 ? 0.95 : 0.85,
           metadata: {
             flagCount: validation.flags.length,
+            hasImageEvidence: evidenceImages && evidenceImages.length > 0,
           },
         };
       }
@@ -195,7 +251,7 @@ Respond in JSON format:
       "impact_measurement_report",
       input,
       async () => {
-        const prompt = `${SYSTEM_PROMPTS.IMPACT_MEASUREMENT}`
+        const prompt = `${SYSTEM_PROMPTS.IMPACT_MEASUREMENT}
 
 Task: Generate an inspiring impact report for this action circle.
 
@@ -280,7 +336,7 @@ Respond in JSON format:
       "impact_measurement_goals",
       input,
       async () => {
-        const prompt = `${SYSTEM_PROMPTS.IMPACT_MEASUREMENT}`
+        const prompt = `${SYSTEM_PROMPTS.IMPACT_MEASUREMENT}
 
 Task: Suggest realistic next impact goals based on current progress.
 

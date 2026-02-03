@@ -33,7 +33,7 @@ export function DashboardNav() {
 
   return (
     <>
-      {/* Mobile Header */}
+      
       <nav className="lg:hidden bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="px-4 py-3 flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2">
@@ -55,7 +55,7 @@ export function DashboardNav() {
           </button>
         </div>
 
-        {/* Mobile Menu */}
+        
         {mobileMenuOpen && (
           <div className="border-t border-gray-200 p-4 space-y-2">
             {navItems.map((item) => {
@@ -88,9 +88,9 @@ export function DashboardNav() {
         )}
       </nav>
 
-      {/* Desktop Sidebar */}
+      
       <aside className="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:w-64 bg-white border-r border-gray-200">
-        {/* Logo */}
+        
         <div className="p-6 border-b border-gray-200">
           <Link href="/dashboard" className="flex items-center gap-2">
             <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-success-500 rounded-xl flex items-center justify-center">
@@ -100,7 +100,7 @@ export function DashboardNav() {
           </Link>
         </div>
 
-        {/* Navigation */}
+        
         <nav className="flex-1 p-4 space-y-2">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -121,7 +121,7 @@ export function DashboardNav() {
           })}
         </nav>
 
-        {/* User */}
+        
         <div className="p-4 border-t border-gray-200">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">

@@ -21,7 +21,8 @@ This project showcases exceptional use of:
 - **AI-Powered Matching**: Get matched to local issues where your skills create maximum impact
 - **Action Circles**: Join small groups (5-10 people) tackling specific community problems
 - **Intelligent Coordination**: AI helps plan activities, assign tasks, and resolve conflicts
-- **Impact Tracking**: See measurable results of your contributions
+- **AI Vision-Based Impact Validation**: Upload photos of your work for AI to verify impact claims using Gemini vision
+- **Impact Tracking**: See measurable results of your contributions with photo evidence
 - **Engagement Coaching**: Stay motivated with personalized check-ins and support
 - **Issue Detail Pages**: View comprehensive information about community issues, active circles, and impact metrics
 - **Circle Detail Pages**: Manage members, view activities, chat in real-time, and track circle progress
@@ -58,9 +59,10 @@ This project showcases exceptional use of:
 
 4. **Impact Measurement Agent**
    - Defines measurable metrics
-   - Validates impact claims
+   - Validates impact claims using uploaded images (Gemini vision)
    - Generates impact reports
    - Suggests next goals
+   - Analyzes photo evidence to verify reported numbers
 
 5. **Engagement Coach Agent**
    - Provides personalized motivation
@@ -181,6 +183,40 @@ Visit `http://localhost:3000`
 
 ## 🧪 Testing the AI Agents
 
+### Where to Find All 6 Agents in the App
+
+1. **Community Intelligence Agent**
+   - **Location**: `/discover` page (Discover Opportunities button)
+   - **Function**: Discovers local community issues based on your location and interests
+   - **API**: `/api/issues/discover`
+
+2. **Skill Matcher Agent**
+   - **Location**: `/discover` page (after discovering issues)
+   - **Function**: Matches you to opportunities based on skills, interests, and availability
+   - **API**: `/api/matching/recommend`
+
+3. **Action Coordinator Agent**
+   - **Location**: `/circles/[id]` page (Get AI Action Plan button)
+   - **Function**: Creates detailed phased action plans with activities and milestones
+   - **API**: `/api/circles/[id]/plan-activities`
+
+4. **Impact Measurement Agent**
+   - **Location**: `/circles/[id]` page (Report Impact button with image upload)
+   - **Function**: Validates impact claims by analyzing uploaded photos using Gemini vision
+   - **API**: `/api/circles/[id]/impact` (POST for validation, GET for reports)
+
+5. **Engagement Coach Agent**
+   - **Location**: Dashboard and background checks
+   - **Function**: Monitors engagement, detects burnout risk, provides motivation
+   - **API**: `/api/engagement/check`
+
+6. **Master Coordinator Agent**
+   - **Location**: `/api/insights/comprehensive`
+   - **Function**: Coordinates all other agents, provides holistic insights
+   - **Note**: Powers the comprehensive insights feature
+
+### Testing Agents Programmatically
+
 Each agent can be tested independently:
 
 ```typescript
@@ -193,9 +229,57 @@ const result = await communityIntelligenceAgent.discoverIssues({
 }, ["environment", "homelessness"]);
 
 console.log(result.data); // Array of discovered issues
+
+// Test Impact Measurement with Images
+import { impactMeasurementAgent } from "@/lib/ai/agents";
+
+const validation = await impactMeasurementAgent.validateImpact(
+  activity,
+  { peopleHelped: 50, hoursContributed: 20 },
+  [base64Image1, base64Image2] // Photos as evidence
+);
+
+console.log(validation.data.imageAnalysis); // AI's analysis of the photos
 ```
 
 ## 📊 Opik Integration Highlights
+
+### 🎯 4 Advanced Opik Features Implemented
+
+Impact Circle showcases exceptional use of Opik's advanced capabilities:
+
+#### 1. **Prompt Library** 📚
+- All 6 agent system prompts version-controlled in Opik
+- Instant prompt updates without code deployment
+- A/B test different prompt variations
+- Track which prompts perform best
+- **Setup**: `npx tsx scripts/setup-opik-features.ts`
+
+#### 2. **Datasets** 📊
+- Pre-built test cases for each agent type:
+  - `skill_matching_tests` - 3 test cases (perfect match, unique value, edge cases)
+  - `impact_validation_tests` - 3 test cases (realistic, inflated, suspicious)
+  - `engagement_coaching_tests` - 2 test cases (burnout, over-commitment)
+- Regression testing to ensure quality across versions
+- Golden datasets from human-reviewed examples
+
+#### 3. **Experiments** 🧪
+- A/B testing framework for data-driven optimization:
+  - **MATCHING_MODEL**: Gemini 2.0 Flash vs 2.5 Pro
+  - **MATCHING_ALGORITHM**: Skills-only vs hybrid matching
+  - **ENGAGEMENT_STRATEGY**: Reactive vs proactive coaching
+  - **IMPACT_VALIDATION**: Moderate vs strict validation
+- Consistent user assignment (same user = same variant)
+- Statistical significance tracking
+
+#### 4. **Annotation Queues** 📝
+- Human-in-the-loop quality control
+- Auto-queue outputs based on rules:
+  - Low confidence (< 0.7) → HIGH priority review
+  - Safety flags → HIGH priority review
+  - Rejected impact validations → MEDIUM priority review
+- 5 pre-configured queues for different review types
+- Build training datasets from reviewed examples
 
 ### What We Track
 
@@ -221,12 +305,23 @@ console.log(result.data); // Array of discovered issues
    - Engagement strategy comparisons
    - Model performance (Gemini Flash vs Pro)
 
-### View Opik Dashboards
+### 🚀 Quick Start: Opik Advanced Features
 
-After running the app with Opik configured:
+```bash
+# Initialize all 4 Opik advanced features
+npx tsx scripts/setup-opik-features.ts
+```
+
+This uploads prompts, creates datasets, and configures experiments and annotation queues.
+
+Then view in Opik Dashboard:
 1. Go to your Comet.com workspace
 2. Navigate to Opik section
-3. View traces, evaluations, and experiments
+3. View **Prompt Library**, **Datasets**, **Traces**, **Experiments**, **Annotations**
+
+📖 **Full Opik Guide**: See [lib/opik/README.md](./lib/opik/README.md) for complete Opik documentation
+
+📖 **Full Project Documentation**: See [DOCUMENTATION.md](./DOCUMENTATION.md) for comprehensive project details
 
 ## 🎨 User Flow
 

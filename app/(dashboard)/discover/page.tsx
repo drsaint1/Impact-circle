@@ -144,10 +144,10 @@ export default function DiscoverPage() {
           category: issueCategory,
           urgency: issueUrgency,
           location: profile?.location || { city: "", state: "" },
-          volunteersNeeded,
-          volunteersJoined: 0,
-          hoursNeeded,
-          skillsNeeded: issueSkills,
+          volunteers_needed: volunteersNeeded,
+          volunteers_joined: 0,
+          estimated_hours: hoursNeeded,
+          skills_needed: issueSkills,
         }),
       });
 

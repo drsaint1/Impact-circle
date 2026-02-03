@@ -20,24 +20,23 @@ export class MasterCoordinatorAgent {
       coordinator?: any;
       coach?: any;
     },
-    context: string
-  ): Promise<AgentResponse<{
-    primaryRecommendation: string;
-    secondaryActions: string[];
-    reasoning: string;
-    priority: "high" | "medium" | "low";
-  }>> {
+    context: string,
+  ): Promise<
+    AgentResponse<{
+      primaryRecommendation: string;
+      secondaryActions: string[];
+      reasoning: string;
+      priority: "high" | "medium" | "low";
+    }>
+  > {
     const input = {
       userId: user.id,
       context,
       agentCount: Object.keys(agentOutputs).length,
     };
 
-    return traceAgentCall(
-      "master_coordinator",
-      input,
-      async () => {
-        const prompt = `${SYSTEM_PROMPTS.MASTER_COORDINATOR}`
+    return traceAgentCall("master_coordinator", input, async () => {
+      const prompt = `${SYSTEM_PROMPTS.MASTER_COORDINATOR}
 
 Task: Coordinate recommendations from multiple agents into a coherent action plan.
 
@@ -45,10 +44,14 @@ User: ${user.fullName}
 Context: ${context}
 
 Agent Recommendations:
-${Object.entries(agentOutputs).map(([agent, output]) => `
+${Object.entries(agentOutputs)
+  .map(
+    ([agent, output]) => `
 ${agent}:
 ${JSON.stringify(output, null, 2)}
-`).join("\n")}
+`,
+  )
+  .join("\n")}
 
 Your role:
 1. Identify conflicts or contradictions
@@ -64,29 +67,28 @@ Respond in JSON format:
   "priority": "high|medium|low"
 }`;
 
-        const result = await this.model.generateContent(prompt);
-        const text = result.response.text();
-        const coordination = parseJsonResponse<{
-          primaryRecommendation: string;
-          secondaryActions: string[];
-          reasoning: string;
-          priority: "high" | "medium" | "low";
-        }>(text);
+      const result = await this.model.generateContent(prompt);
+      const text = result.response.text();
+      const coordination = parseJsonResponse<{
+        primaryRecommendation: string;
+        secondaryActions: string[];
+        reasoning: string;
+        priority: "high" | "medium" | "low";
+      }>(text);
 
-        if (!coordination) {
-          return {
-            success: false,
-            error: "Failed to coordinate recommendations",
-          };
-        }
-
+      if (!coordination) {
         return {
-          success: true,
-          data: coordination,
-          confidence: 0.88,
+          success: false,
+          error: "Failed to coordinate recommendations",
         };
       }
-    );
+
+      return {
+        success: true,
+        data: coordination,
+        confidence: 0.88,
+      };
+    });
   }
 
   /**
@@ -94,23 +96,22 @@ Respond in JSON format:
    */
   async safetyCheck(
     content: string,
-    contentType: "issue" | "message" | "activity" | "profile"
-  ): Promise<AgentResponse<{
-    safe: boolean;
-    concerns: string[];
-    category?: string;
-    recommendation: "approve" | "flag" | "block";
-  }>> {
+    contentType: "issue" | "message" | "activity" | "profile",
+  ): Promise<
+    AgentResponse<{
+      safe: boolean;
+      concerns: string[];
+      category?: string;
+      recommendation: "approve" | "flag" | "block";
+    }>
+  > {
     const input = {
       contentType,
       contentLength: content.length,
     };
 
-    return traceAgentCall(
-      "master_coordinator_safety",
-      input,
-      async () => {
-        const prompt = `${SYSTEM_PROMPTS.MASTER_COORDINATOR}`
+    return traceAgentCall("master_coordinator_safety", input, async () => {
+      const prompt = `${SYSTEM_PROMPTS.MASTER_COORDINATOR}
 
 Task: Perform a safety check on this content.
 
@@ -134,39 +135,37 @@ Respond in JSON format:
   "recommendation": "approve|flag|block"
 }`;
 
-        const result = await this.model.generateContent(prompt);
-        const text = result.response.text();
-        const safetyResult = parseJsonResponse<{
-          safe: boolean;
-          concerns: string[];
-          category?: string;
-          recommendation: "approve" | "flag" | "block";
-        }>(text);
+      const result = await this.model.generateContent(prompt);
+      const text = result.response.text();
+      const safetyResult = parseJsonResponse<{
+        safe: boolean;
+        concerns: string[];
+        category?: string;
+        recommendation: "approve" | "flag" | "block";
+      }>(text);
 
-        if (!safetyResult) {
-          
-          return {
-            success: true,
-            data: {
-              safe: false,
-              concerns: ["Unable to complete safety check"],
-              recommendation: "flag",
-            },
-            confidence: 0.5,
-          };
-        }
-
+      if (!safetyResult) {
         return {
           success: true,
-          data: safetyResult,
-          confidence: 0.93,
-          metadata: {
-            flagged: !safetyResult.safe,
-            recommendation: safetyResult.recommendation,
+          data: {
+            safe: false,
+            concerns: ["Unable to complete safety check"],
+            recommendation: "flag",
           },
+          confidence: 0.5,
         };
       }
-    );
+
+      return {
+        success: true,
+        data: safetyResult,
+        confidence: 0.93,
+        metadata: {
+          flagged: !safetyResult.safe,
+          recommendation: safetyResult.recommendation,
+        },
+      };
+    });
   }
 
   /**
@@ -174,22 +173,21 @@ Respond in JSON format:
    */
   async handleEdgeCase(
     situation: string,
-    availableOptions: string[]
-  ): Promise<AgentResponse<{
-    recommendation: string;
-    explanation: string;
-    escalate: boolean;
-  }>> {
+    availableOptions: string[],
+  ): Promise<
+    AgentResponse<{
+      recommendation: string;
+      explanation: string;
+      escalate: boolean;
+    }>
+  > {
     const input = {
       situation,
       optionCount: availableOptions.length,
     };
 
-    return traceAgentCall(
-      "master_coordinator_edge_case",
-      input,
-      async () => {
-        const prompt = `${SYSTEM_PROMPTS.MASTER_COORDINATOR}`
+    return traceAgentCall("master_coordinator_edge_case", input, async () => {
+      const prompt = `${SYSTEM_PROMPTS.MASTER_COORDINATOR}
 
 Task: Handle an edge case or unusual situation.
 
@@ -210,28 +208,27 @@ Respond in JSON format:
   "escalate": true/false
 }`;
 
-        const result = await this.model.generateContent(prompt);
-        const text = result.response.text();
-        const decision = parseJsonResponse<{
-          recommendation: string;
-          explanation: string;
-          escalate: boolean;
-        }>(text);
+      const result = await this.model.generateContent(prompt);
+      const text = result.response.text();
+      const decision = parseJsonResponse<{
+        recommendation: string;
+        explanation: string;
+        escalate: boolean;
+      }>(text);
 
-        if (!decision) {
-          return {
-            success: false,
-            error: "Failed to handle edge case",
-          };
-        }
-
+      if (!decision) {
         return {
-          success: true,
-          data: decision,
-          confidence: 0.75,
+          success: false,
+          error: "Failed to handle edge case",
         };
       }
-    );
+
+      return {
+        success: true,
+        data: decision,
+        confidence: 0.75,
+      };
+    });
   }
 }
 
