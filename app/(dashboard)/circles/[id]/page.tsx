@@ -485,7 +485,7 @@ export default function CircleDetailPage() {
               <div className="card bg-success-50 border-2 border-success-200">
                 <div className="flex items-center gap-2 text-success-700 mb-2">
                   <CheckCircle className="w-5 h-5" />
-                  <span className="font-semibold">You're a member</span>
+                  <span className="font-semibold">You&apos;re a member</span>
                 </div>
                 <p className="text-sm text-success-600">
                   Access activities and chat below
@@ -1031,7 +1031,7 @@ export default function CircleDetailPage() {
           <div className="bg-white rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
             <h2 className="heading-2 mb-4">Report Your Impact</h2>
             <p className="text-sm text-gray-600 mb-6">
-              Share the results of your circle's activities. Our AI will validate the metrics.
+              Share the results of your circle&apos;s activities. Our AI will validate the metrics.
             </p>
 
             <div className="space-y-4">

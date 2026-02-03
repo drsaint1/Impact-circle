@@ -115,7 +115,7 @@ export default function DashboardPage() {
           Welcome back, {profile?.fullName?.split(" ")[0]}! 👋
         </h1>
         <p className="text-lg text-primary-100 mb-6">
-          You're making a real difference in {profile?.location.city}
+          You&apos;re making a real difference in {profile?.location.city}
         </p>
         <div className="flex flex-col sm:flex-row gap-3">
           <Link href="/discover" className="btn bg-white text-primary-600 hover:bg-gray-100">

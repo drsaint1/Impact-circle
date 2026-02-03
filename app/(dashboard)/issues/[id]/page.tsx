@@ -382,7 +382,7 @@ export default function IssueDetailPage() {
           <div className="bg-white rounded-2xl max-w-md w-full p-6">
             <h2 className="heading-2 mb-4">Choose a Circle to Join</h2>
             <p className="text-gray-600 mb-6">
-              Multiple circles are working on this issue. Choose which one you'd like to join:
+              Multiple circles are working on this issue. Choose which one you&apos;d like to join:
             </p>
             <div className="space-y-3 mb-6">
               {circles.map((circle: any) => (

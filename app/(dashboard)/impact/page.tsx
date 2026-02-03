@@ -128,7 +128,7 @@ export default function ImpactPage() {
           <h1 className="heading-1">Your Impact Dashboard</h1>
         </div>
         <p className="text-lg text-primary-100">
-          Track the real difference you're making in {profile?.location?.city || "your community"}
+          Track the real difference you&apos;re making in {profile?.location?.city || "your community"}
         </p>
       </div>
 
@@ -190,7 +190,7 @@ export default function ImpactPage() {
         {circles.length === 0 ? (
           <div className="text-center py-12 bg-gray-50 rounded-lg">
             <Users className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-600 mb-2">You haven't joined any circles yet</p>
+            <p className="text-gray-600 mb-2">You haven&apos;t joined any circles yet</p>
             <p className="text-sm text-gray-500 mb-4">
               Join a circle to start tracking your impact
             </p>
@@ -280,7 +280,7 @@ export default function ImpactPage() {
           <h2 className="heading-3">Keep the Momentum Going!</h2>
         </div>
         <p className="text-gray-700 mb-4">
-          You're making a real difference in your community. Here's how you can increase your impact:
+          You&apos;re making a real difference in your community. Here&apos;s how you can increase your impact:
         </p>
         <div className="grid sm:grid-cols-2 gap-3">
           <Link

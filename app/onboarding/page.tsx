@@ -213,7 +213,7 @@ export default function OnboardingPage() {
                 </div>
                 <h2 className="heading-2 mb-2">Where are you located?</h2>
                 <p className="text-gray-600">
-                  We'll match you with local opportunities in your area
+                  We&apos;ll match you with local opportunities in your area
                 </p>
               </div>
 
@@ -330,7 +330,7 @@ export default function OnboardingPage() {
                 </div>
                 <h2 className="heading-2 mb-2">What causes matter to you?</h2>
                 <p className="text-gray-600">
-                  We'll prioritize issues you care about
+                  We&apos;ll prioritize issues you care about
                 </p>
               </div>
 
