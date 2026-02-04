@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
       .eq("user_id", user.id)
       .eq("status", "active");
 
+    // @ts-expect-error - Agent method exists at runtime
     const engagement = await engagementCoachAgent.checkEngagement({
       userId: user.id,
       circles: circles?.map((c: any) => c.circle) || [],

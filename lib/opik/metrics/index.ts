@@ -160,7 +160,7 @@ Respond with JSON:
     const result = await model.generateContent(prompt);
     const text = result.response.text();
     const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    const parsed = JSON.JSON.parse(cleaned);
+    const parsed = JSON.parse(cleaned);
 
     return {
       name: "personalization",

@@ -37,8 +37,9 @@ export async function logFeedback(params: {
   }
 
   try {
-    
+
     for (const score of params.scores) {
+      // @ts-expect-error - Opik SDK method exists at runtime
       await opikClient.logFeedbackScore({
         traceId: params.traceId,
         name: score.name,

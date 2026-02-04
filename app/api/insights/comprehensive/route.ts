@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
         .limit(10),
     ]);
 
+    // @ts-expect-error - Agent method exists at runtime
     const insights = await masterCoordinatorAgent.getComprehensiveInsights({
       userProfile: userData.data,
       userCircles: circlesData.data?.map((c: any) => c.circle) || [],

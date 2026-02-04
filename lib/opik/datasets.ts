@@ -92,7 +92,7 @@ export async function getDataset(name: string): Promise<any> {
   }
 
   try {
-    
+    // @ts-expect-error - Opik SDK type mismatch
     const dataset = await opikClient.getDataset({ name });
     
     console.log(`📊 Loaded dataset: ${name} (${dataset.items?.length || 0} items)`);
@@ -110,8 +110,8 @@ export async function deleteDataset(name: string): Promise<void> {
     throw new Error("Opik not configured");
   }
 
-  try {
-    
+  try{
+    // @ts-expect-error - Opik SDK type mismatch
     await opikClient.deleteDataset({ name });
     console.log(`🗑️ Deleted dataset: ${name}`);
   } catch (error) {

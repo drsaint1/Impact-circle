@@ -126,6 +126,7 @@ export async function PATCH(
 
     const { data: membership, error: membershipError } = await supabase
       .from("circle_members")
+      .select("*")
       .eq("circle_id", params.id)
       .eq("user_id", user.id)
       .single();
