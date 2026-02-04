@@ -222,7 +222,7 @@ export default function IssueDetailPage() {
             <div>
               <div className="text-xs text-gray-500">Impact</div>
               <div className="font-medium text-gray-900">
-                {issue.impactMetrics?.peopleHelped || 50}+ people
+                {circles.reduce((total, circle) => total + (circle.impactMetrics?.peopleHelped || 0), 0) || 50}+ people
               </div>
             </div>
           </div>
