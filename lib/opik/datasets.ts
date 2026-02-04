@@ -94,7 +94,8 @@ export async function getDataset(name: string): Promise<any> {
   try {
     // @ts-expect-error - Opik SDK type mismatch
     const dataset = await opikClient.getDataset({ name });
-    
+
+    // @ts-expect-error - Opik SDK Dataset type doesn't expose items property
     console.log(`📊 Loaded dataset: ${name} (${dataset.items?.length || 0} items)`);
     return dataset;
   } catch (error) {
