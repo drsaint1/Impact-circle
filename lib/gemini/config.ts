@@ -63,7 +63,6 @@ export function getModel(
   }
 
   // Return standard model without tracking
-  // @ts-expect-error - SafetySetting type mismatch with SDK
   return genAI.getGenerativeModel({
     model: modelId,
     safetySettings,
