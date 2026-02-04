@@ -8,7 +8,7 @@ import { Heart, Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { signIn } = useAuth();
+  const { signIn, profile } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,7 +21,16 @@ export default function LoginPage() {
 
     try {
       await signIn(email, password);
-      router.push("/dashboard");
+
+      // Wait a moment for profile to load
+      setTimeout(() => {
+        // Check if user has completed onboarding
+        if (profile && !profile.onboarding_completed) {
+          router.push("/onboarding");
+        } else {
+          router.push("/dashboard");
+        }
+      }, 500);
     } catch (err: any) {
       setError(err.message || "Failed to sign in");
     } finally {

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
-import { Heart, Mail, Lock, AlertCircle, Loader2, User } from "lucide-react";
+import { Heart, Mail, Lock, AlertCircle, Loader2, User, CheckCircle } from "lucide-react";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -14,11 +14,14 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setSuccess(false);
 
     if (password.length < 6) {
       setError("Password must be at least 6 characters");
@@ -38,7 +41,10 @@ export default function SignUpPage() {
           preferredTimes: [],
         },
       });
-      router.push("/onboarding");
+
+      // Show success message instead of redirecting
+      setUserEmail(email);
+      setSuccess(true);
     } catch (err: any) {
       setError(err.message || "Failed to create account");
     } finally {
@@ -71,83 +77,114 @@ export default function SignUpPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="form-group">
-              <label htmlFor="fullName" className="form-label">
-                Full Name
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  id="fullName"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="input pl-10"
-                  placeholder="John Doe"
-                  required
-                  disabled={loading}
-                />
+          {success && (
+            <div className="mb-4 p-4 bg-success-50 border border-success-200 rounded-lg">
+              <div className="flex items-start gap-3 mb-3">
+                <CheckCircle className="w-5 h-5 text-success-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="text-sm font-semibold text-success-900 mb-1">
+                    Check your email!
+                  </h3>
+                  <p className="text-sm text-success-800">
+                    We&apos;ve sent a verification link to <strong>{userEmail}</strong>
+                  </p>
+                </div>
+              </div>
+              <div className="pl-8 space-y-2 text-sm text-success-700">
+                <p>📧 Click the verification link in your email to activate your account</p>
+                <p>⏱️ The link will expire in 24 hours</p>
+                <p>📬 Don&apos;t see it? Check your spam folder</p>
+              </div>
+              <div className="mt-4 pl-8">
+                <Link
+                  href="/login"
+                  className="text-sm font-medium text-success-700 hover:text-success-800 underline"
+                >
+                  Go to login page →
+                </Link>
               </div>
             </div>
+          )}
 
-            <div className="form-group">
-              <label htmlFor="email" className="form-label">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="email"
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="input pl-10"
-                  placeholder="you@example.com"
-                  required
-                  disabled={loading}
-                />
+{!success && (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="form-group">
+                <label htmlFor="fullName" className="form-label">
+                  Full Name
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    id="fullName"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="input pl-10"
+                    placeholder="John Doe"
+                    required
+                    disabled={loading}
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="form-group">
-              <label htmlFor="password" className="form-label">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="password"
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="input pl-10"
-                  placeholder="••••••••"
-                  required
-                  minLength={6}
-                  disabled={loading}
-                />
+              <div className="form-group">
+                <label htmlFor="email" className="form-label">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="email"
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="input pl-10"
+                    placeholder="you@example.com"
+                    required
+                    disabled={loading}
+                  />
+                </div>
               </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Must be at least 6 characters
-              </p>
-            </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn btn-primary w-full flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Creating account...
-                </>
-              ) : (
-                "Create Account"
-              )}
-            </button>
-          </form>
+              <div className="form-group">
+                <label htmlFor="password" className="form-label">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="password"
+                    id="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="input pl-10"
+                    placeholder="••••••••"
+                    required
+                    minLength={6}
+                    disabled={loading}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Must be at least 6 characters
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn btn-primary w-full flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Creating account...
+                  </>
+                ) : (
+                  "Create Account"
+                )}
+              </button>
+            </form>
+          )}
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
