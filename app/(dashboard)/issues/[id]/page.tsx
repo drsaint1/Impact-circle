@@ -347,7 +347,7 @@ export default function IssueDetailPage() {
         <div className="grid sm:grid-cols-3 gap-4">
           <div className="text-center p-4 bg-white rounded-lg">
             <div className="text-3xl font-bold text-primary-600 mb-1">
-              {issue.impactMetrics?.peopleHelped || 50}+
+              {circles.reduce((total, circle) => total + (circle.impactMetrics?.peopleHelped || 0), 0) || 50}+
             </div>
             <div className="text-sm text-gray-600">People Helped</div>
           </div>
@@ -359,7 +359,7 @@ export default function IssueDetailPage() {
           </div>
           <div className="text-center p-4 bg-white rounded-lg">
             <div className="text-3xl font-bold text-warning-600 mb-1">
-              {issue.impactMetrics?.communityReach || "Local"}
+              Local
             </div>
             <div className="text-sm text-gray-600">Community Reach</div>
           </div>
