@@ -25,7 +25,7 @@ export default function LoginPage() {
       // Wait a moment for profile to load
       setTimeout(() => {
         // Check if user has completed onboarding
-        if (profile && !profile.onboarding_completed) {
+        if (profile && !profile.onboardingCompleted) {
           router.push("/onboarding");
         } else {
           router.push("/dashboard");
